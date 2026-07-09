@@ -189,13 +189,26 @@
   .fc-hit { fill: transparent; cursor: pointer; }
   .fc-typ-label { font-size: 11px; font-weight: 750; fill: var(--ink); font-variant-numeric: tabular-nums; }
   .routes { margin-top: 18px; border-top: 1px solid var(--hairline); padding-top: 4px; overflow-x: auto; }
-  table.rt { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  table.rt { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
   table.rt th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; padding: 10px 10px 6px; border-bottom: 1px solid var(--hairline); }
   table.rt td { padding: 9px 10px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); }
   table.rt tr:last-child td { border-bottom: none; }
   table.rt td.route { font-weight: 750; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .badge-season { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
   .badge-year { background: color-mix(in srgb, var(--good) 12%, transparent); color: var(--good-text); }
+
+  /* ---------- Google Flights CTAs ---------- */
+  .cta-link { font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .cta-link:hover { text-decoration: underline; }
+  .cta-link:focus-visible, .cta-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cta-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 14px; padding: 11px 14px; border-radius: 10px;
+    background: var(--accent); color: var(--page); font-weight: 750; font-size: 13.5px;
+    text-decoration: none; transition: filter .15s;
+  }
+  .cta-btn:hover { filter: brightness(1.08); }
+  .cta-btn .arrow { font-size: 15px; line-height: 1; }
 
   /* ---------- best windows ---------- */
   .windows { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
@@ -285,6 +298,7 @@
       <div class="legend">
         <span class="key"><i class="swatch" style="background:var(--low);opacity:.35"></i>특가~고가 범위</span>
         <span class="key"><i class="swatch" style="background:var(--accent);border-radius:50%"></i>보통 가격</span>
+        <a class="cta-link" id="gf-generic" href="#" target="_blank" rel="noopener">구글 플라이트에서 보기 ↗</a>
       </div>
     </div>
     <div class="chart-scroll" id="flight-chart"></div>
@@ -484,6 +498,15 @@ const fmt$ = (n) => '$' + Math.round(n).toLocaleString('en-US');
 let selMonth = 9;
 const NOW_MONTH = 7; // 2026년 7월 기준
 
+// Google Flights CTA helpers
+const gfUrl = (q) => 'https://www.google.com/travel/flights?q=' + encodeURIComponent(q);
+function gfMonthUrl(m) {
+  const y = m >= NOW_MONTH ? 2026 : 2027; // 지난 달은 내년으로
+  const mm = String(m).padStart(2, '0');
+  return gfUrl(`nonstop flights from New York to Rome on ${y}-${mm}-10 returning ${y}-${mm}-20`);
+}
+const gfRouteUrl = (route) => gfUrl(`nonstop flights from ${route.replace(' → ', ' to ')}`);
+
 // temperature -> color (semantic heat ramp, palette hues)
 const TSTOPS = [[0,'#104281'],[6,'#1c5cab'],[11,'#3987e5'],[15,'#86b6ef'],[19,'#e3b341'],[22,'#eda100'],[26,'#eb6834'],[31,'#d03b3b'],[36,'#a02020']];
 function lerpHex(a, b, t) {
@@ -652,6 +675,8 @@ function renderDetail() {
       <div class="stat"><div class="k">항공권 한줄평</div>
         <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">${f.note}</div></div>
     </div>
+    <a class="cta-btn" href="${gfMonthUrl(selMonth)}" target="_blank" rel="noopener">
+      구글 플라이트에서 ${MONTH_KO[selMonth-1]} 직항 검색 (뉴욕 → 로마 기준)<span class="arrow">↗</span></a>
     <p class="detail-notes">${s.regionalNotes}</p>
     ${evts.length ? `<ul class="detail-events">${evts.map(e =>
       `<li><span class="evt-chip ${e.impact}">${IMPACT_KO[e.impact]}</span>
@@ -702,13 +727,15 @@ function renderFlights() {
 
   // routes table
   const rt = $('#routes-table');
-  rt.innerHTML = `<thead><tr><th>노선</th><th>도착 도시</th><th>항공사</th><th>운항 기간</th><th>소요</th></tr></thead>
+  rt.innerHTML = `<thead><tr><th>노선</th><th>도착 도시</th><th>항공사</th><th>운항 기간</th><th>소요</th><th></th></tr></thead>
     <tbody>${DATA.flights.routes.map(r => `<tr>
       <td class="route">${r.route}</td>
       <td>${r.city}</td>
       <td>${r.airlines}</td>
       <td><span class="badge-season ${r.yearRound ? 'badge-year' : ''}">${r.serviceKo}</span></td>
       <td>약 ${r.hours}시간</td>
+      <td><a class="cta-link" href="${gfRouteUrl(r.route)}" target="_blank" rel="noopener"
+        aria-label="${r.route} ${r.city} 구글 플라이트 검색">검색 ↗</a></td>
     </tr>`).join('')}</tbody>`;
 }
 
@@ -739,6 +766,7 @@ if (DATA) {
   renderAll();
   renderWindows();
   renderWxTable();
+  $('#gf-generic').href = gfUrl('nonstop flights from New York to Italy');
   $('#footer-note').textContent = '기온·강수는 30년 기후 평년값, 항공권은 2025–2026 직항 왕복 이코노미 시세 기준(구글 플라이트·항공사 발표 종합). 실제 가격은 예약 시점에 따라 달라집니다. 2026년 7월 작성.';
 }
 </script>
