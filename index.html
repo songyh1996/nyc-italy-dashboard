@@ -234,7 +234,7 @@
 
   /* ---------- tooltip ---------- */
   .tip {
-    position: fixed; z-index: 50; pointer-events: none; max-width: 280px;
+    position: fixed; z-index: 50; pointer-events: none; max-width: min(280px, calc(100vw - 16px));
     background: var(--ink); color: var(--page); border-radius: 10px; padding: 10px 12px;
     font-size: 12.5px; line-height: 1.5; box-shadow: 0 8px 30px rgba(0,0,0,.25);
     opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s;
@@ -554,9 +554,12 @@ function showTip(html, x, y) {
   tip.innerHTML = html;
   tip.classList.add('show');
   const w = tip.offsetWidth, h = tip.offsetHeight;
-  let left = x + 14, top = y + 14;
-  if (left + w > innerWidth - 10) left = x - w - 14;
-  if (top + h > innerHeight - 10) top = y - h - 14;
+  // 항상 뷰포트 안에 완전히 들어오도록 클램프
+  let left = Math.min(x + 14, innerWidth - w - 8);
+  left = Math.max(8, left);
+  let top = y + 14;
+  if (top + h > innerHeight - 8) top = y - h - 14; // 아래 공간 부족 시 위로
+  top = Math.min(Math.max(8, top), Math.max(8, innerHeight - h - 8));
   tip.style.left = left + 'px'; tip.style.top = top + 'px';
 }
 function hideTip() { tip.classList.remove('show'); }
