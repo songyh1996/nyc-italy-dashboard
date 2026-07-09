@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>뉴욕 ⇄ 이탈리아 여행 대시보드</title>
 <style>
   :root {
@@ -190,8 +191,9 @@
   .fc-typ-label { font-size: 11px; font-weight: 750; fill: var(--ink); font-variant-numeric: tabular-nums; }
   .routes { margin-top: 18px; border-top: 1px solid var(--hairline); padding-top: 4px; overflow-x: auto; }
   table.rt { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
-  table.rt th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; padding: 10px 10px 6px; border-bottom: 1px solid var(--hairline); }
-  table.rt td { padding: 9px 10px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); }
+  table.rt th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; padding: 10px 10px 6px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+  table.rt td { padding: 9px 10px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); white-space: nowrap; }
+  table.rt td:nth-child(3) { white-space: normal; min-width: 200px; }
   table.rt tr:last-child td { border-bottom: none; }
   table.rt td.route { font-weight: 750; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .badge-season { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
@@ -243,6 +245,21 @@
   .tip .tmuted { opacity: .72; }
   .footer-note { margin-top: 28px; font-size: 12px; color: var(--muted); max-width: 74ch; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 640px) {
+    .wrap { padding: 22px 14px 56px; }
+    .masthead { flex-direction: column; align-items: stretch; gap: 14px; }
+    .verdict { align-items: flex-start; }
+    .chips { justify-content: flex-start; }
+    .card { padding: 16px 14px; margin-top: 16px; }
+    .tl-scroll { overflow-x: visible; }
+    .timeline { grid-template-columns: repeat(3, 1fr); min-width: 0; gap: 8px; }
+    .tl-month { padding: 8px 5px 10px; gap: 6px; }
+    .stat .v { font-size: 19px; }
+    .cta-btn { text-align: center; line-height: 1.45; padding: 11px 12px; }
+    .map-box svg { max-height: none; }
+  }
 </style>
 
 <div class="wrap">
@@ -548,7 +565,10 @@ function bindTip(el, htmlFn) {
   el.addEventListener('mouseleave', hideTip);
   el.addEventListener('focus', () => { const r = el.getBoundingClientRect(); showTip(htmlFn(), r.right, r.top); });
   el.addEventListener('blur', hideTip);
+  // 터치: 탭으로 툴팁 표시, 바깥 탭으로 닫기
+  el.addEventListener('click', e => { showTip(htmlFn(), e.clientX, e.clientY); e.stopPropagation(); });
 }
+document.addEventListener('click', hideTip);
 
 // ---------- geometry (equirectangular projection of real coordinates) ----------
 const MAP = {
