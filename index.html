@@ -512,7 +512,7 @@ const MONTH_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월'
 const SEASON_KO = { peak: '성수기', shoulder: '준성수기', low: '비수기' };
 const IMPACT_KO = { avoid: '피하기', crowded: '혼잡', highlight: '볼거리', deal: '딜' };
 const fmt$ = (n) => '$' + Math.round(n).toLocaleString('en-US');
-let selMonth = 9;
+let selMonth = 9; // null = 선택 해제 (이번 달 기준으로 표시)
 const NOW_MONTH = 7; // 2026년 7월 기준
 
 const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
@@ -630,7 +630,12 @@ function renderTimeline() {
       </span>
       <span class="crowd-row">혼잡 ${'●'.repeat(s.crowd)}${'○'.repeat(5 - s.crowd)}</span>
       <span class="crowd-row" title="9개 도시 평균 비 올 확률">☂ ${avgRainPct(m)}%</span>`;
-    btn.addEventListener('click', () => { selMonth = m; renderAll(); });
+    btn.addEventListener('click', () => {
+      const wasSelected = selMonth === m;
+      selMonth = wasSelected ? null : m; // 같은 달 재탭 = 선택 해제
+      renderAll();
+      if (wasSelected) setTimeout(hideTip, 0); // 해제 시 툴팁도 닫기
+    });
     bindTip(btn, () => {
       const f = flightOf(m);
       const rows = evts.map(e =>
@@ -646,12 +651,13 @@ function renderTimeline() {
 }
 
 function renderMap() {
-  $('#map-title').textContent = `지역별 날씨 — ${MONTH_KO[selMonth-1]}`;
+  const m = selMonth ?? NOW_MONTH;
+  $('#map-title').textContent = `지역별 날씨 — ${MONTH_KO[m-1]}${selMonth ? '' : ' (이번 달)'}`;
   const box = $('#map-box');
   const dots = Object.entries(MAP.cities).map(([name, p]) => {
     const c = cityByName(name);
     if (!c) return '';
-    const mm = monthOf(c, selMonth);
+    const mm = monthOf(c, m);
     const col = tempColor(mm.highC);
     return `
       <g data-city="${name}">
@@ -660,7 +666,7 @@ function renderMap() {
           style="fill:${inkOn(col)};font-size:9px">${Math.round(mm.highC)}°</text>
         <text class="city-label" x="${p.x + p.lx}" y="${p.y + p.ly}" text-anchor="${p.anchor}">${name}</text>
         <circle class="city-hit" cx="${p.x}" cy="${p.y}" r="16" tabindex="0" role="img"
-          aria-label="${name} ${MONTH_KO[selMonth-1]} 최고 ${Math.round(mm.highC)}도 최저 ${Math.round(mm.lowC)}도"></circle>
+          aria-label="${name} ${MONTH_KO[m-1]} 최고 ${Math.round(mm.highC)}도 최저 ${Math.round(mm.lowC)}도"></circle>
       </g>`;
   }).join('');
   box.innerHTML = `<svg viewBox="${MAP.viewBox}" xmlns="http://www.w3.org/2000/svg" aria-label="이탈리아 지도, ${MONTH_KO[selMonth-1]} 도시별 기온">
@@ -673,12 +679,12 @@ function renderMap() {
     const name = hit.closest('g').dataset.city;
     const c = cityByName(name);
     bindTip(hit, () => {
-      const mm = monthOf(c, selMonth);
+      const mm = monthOf(c, m);
       const sea = mm.seaTempC != null
         ? `<div class="trow"><span>바다 수온</span><span>${Math.round(mm.seaTempC)}°C${mm.seaTempC >= 22 ? ' · 수영 OK' : ''}</span></div>` : '';
-      return `<b>${name}</b> <span class="tmuted">· ${c.region} · ${MONTH_KO[selMonth-1]}</span>
+      return `<b>${name}</b> <span class="tmuted">· ${c.region} · ${MONTH_KO[m-1]}</span>
         <div class="trow" style="margin-top:4px"><span>낮 최고 / 밤 최저</span><b>${Math.round(mm.highC)}° / ${Math.round(mm.lowC)}°C</b></div>
-        <div class="trow"><span>비 올 확률</span><span>${rainPct(mm.rainDays, selMonth)}%</span></div>${sea}`;
+        <div class="trow"><span>비 올 확률</span><span>${rainPct(mm.rainDays, m)}%</span></div>${sea}`;
     });
   });
   // gradient legend
@@ -688,13 +694,14 @@ function renderMap() {
 }
 
 function renderDetail() {
-  const s = seasonOf(selMonth);
-  const f = flightOf(selMonth);
-  const evts = eventsOf(selMonth);
+  const m = selMonth ?? NOW_MONTH; // 선택 해제 시 이번 달 기준
+  const s = seasonOf(m);
+  const f = flightOf(m);
+  const evts = eventsOf(m);
   const card = $('#detail-card');
   card.innerHTML = `
     <div class="card-head">
-      <h2>${MONTH_KO[selMonth-1]}의 이탈리아</h2>
+      <h2>${MONTH_KO[m-1]}의 이탈리아${selMonth ? '' : ' (이번 달)'}</h2>
       <span class="detail-season ${s.season}">${SEASON_KO[s.season]}</span>
     </div>
     <p class="detail-summary">${s.summaryKo}</p>
@@ -710,8 +717,8 @@ function renderDetail() {
       <div class="stat"><div class="k">항공권 한줄평</div>
         <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">${f.note}</div></div>
     </div>
-    <a class="cta-btn" href="${gfMonthUrl(selMonth)}" target="_blank" rel="noopener">
-      구글 플라이트에서 ${MONTH_KO[selMonth-1]} 직항 검색 (뉴욕 → 로마 기준)<span class="arrow">↗</span></a>
+    <a class="cta-btn" href="${gfMonthUrl(m)}" target="_blank" rel="noopener">
+      구글 플라이트에서 ${MONTH_KO[m-1]} 직항 검색 (뉴욕 → 로마 기준)<span class="arrow">↗</span></a>
     <p class="detail-notes">${s.regionalNotes}</p>
     ${evts.length ? `<ul class="detail-events">${evts.map(e =>
       `<li><span class="evt-chip ${e.impact}">${IMPACT_KO[e.impact]}</span>
@@ -752,7 +759,12 @@ function renderFlights() {
   $('#flight-chart').querySelectorAll('.fc-hit').forEach(hit => {
     const m = +hit.dataset.m;
     const d = M.find(x => x.month === m);
-    hit.addEventListener('click', () => { selMonth = m; renderAll(); });
+    hit.addEventListener('click', () => {
+      const wasSelected = selMonth === m;
+      selMonth = wasSelected ? null : m; // 같은 달 재탭 = 선택 해제
+      renderAll();
+      if (wasSelected) setTimeout(hideTip, 0);
+    });
     bindTip(hit, () => `<b>${MONTH_KO[m-1]} 직항 왕복</b>
       <div class="trow" style="margin-top:4px"><span>특가</span><span>${fmt$(d.lowUSD)}</span></div>
       <div class="trow"><span>보통</span><b>${fmt$(d.typicalUSD)}</b></div>
