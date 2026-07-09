@@ -315,7 +315,7 @@
   </section>
 
   <details class="wx card" style="padding-top:12px;padding-bottom:12px">
-    <summary>전체 날씨 표 보기 (도시 × 12개월, 최고/최저기온·비 오는 날)</summary>
+    <summary>전체 날씨 표 보기 (도시 × 12개월, 최고/최저기온 · 비 올 확률)</summary>
     <div class="wx-scroll" id="wx-table"></div>
   </details>
 
@@ -498,6 +498,9 @@ const fmt$ = (n) => '$' + Math.round(n).toLocaleString('en-US');
 let selMonth = 9;
 const NOW_MONTH = 7; // 2026년 7월 기준
 
+const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
+const rainPct = (rainDays, m) => Math.round(rainDays / DAYS_IN_MONTH[m-1] * 100);
+
 // Google Flights CTA helpers
 const gfUrl = (q) => 'https://www.google.com/travel/flights?q=' + encodeURIComponent(q);
 function gfMonthUrl(m) {
@@ -643,7 +646,7 @@ function renderMap() {
         ? `<div class="trow"><span>바다 수온</span><span>${Math.round(mm.seaTempC)}°C${mm.seaTempC >= 22 ? ' · 수영 OK' : ''}</span></div>` : '';
       return `<b>${name}</b> <span class="tmuted">· ${c.region} · ${MONTH_KO[selMonth-1]}</span>
         <div class="trow" style="margin-top:4px"><span>낮 최고 / 밤 최저</span><b>${Math.round(mm.highC)}° / ${Math.round(mm.lowC)}°C</b></div>
-        <div class="trow"><span>비 오는 날</span><span>월 ${Math.round(mm.rainDays)}일</span></div>${sea}`;
+        <div class="trow"><span>비 올 확률</span><span>${rainPct(mm.rainDays, selMonth)}%</span></div>${sea}`;
     });
   });
   // gradient legend
@@ -735,7 +738,7 @@ function renderFlights() {
       <td><span class="badge-season ${r.yearRound ? 'badge-year' : ''}">${r.serviceKo}</span></td>
       <td>약 ${r.hours}시간</td>
       <td><a class="cta-link" href="${gfRouteUrl(r.route)}" target="_blank" rel="noopener"
-        aria-label="${r.route} ${r.city} 구글 플라이트 검색">검색 ↗</a></td>
+        aria-label="${r.route} ${r.city} 구글 플라이트 비행편 검색">비행편 검색 ↗</a></td>
     </tr>`).join('')}</tbody>`;
 }
 
@@ -751,7 +754,7 @@ function renderWxTable() {
   $('#wx-table').innerHTML = `<table class="wx-t">
     <thead><tr><th>도시</th>${MONTH_KO.map(m => `<th>${m}</th>`).join('')}</tr></thead>
     <tbody>${cities.map(c => `<tr><td>${c.name}</td>${MONTH_KO.map((_, i) =>
-      `<td>${Math.round(c.hi[i])}°/${Math.round(c.lo[i])}°<br><span style="color:var(--muted)">☂${Math.round(c.rain[i])}일</span></td>`).join('')}</tr>`).join('')}
+      `<td>${Math.round(c.hi[i])}°/${Math.round(c.lo[i])}°<br><span style="color:var(--muted)">☂${rainPct(c.rain[i], i+1)}%</span></td>`).join('')}</tr>`).join('')}
     </tbody></table>`;
 }
 
