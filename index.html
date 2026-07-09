@@ -569,6 +569,8 @@ function bindTip(el, htmlFn) {
   el.addEventListener('click', e => { showTip(htmlFn(), e.clientX, e.clientY); e.stopPropagation(); });
 }
 document.addEventListener('click', hideTip);
+// 스크롤(페이지·가로 스크롤 컨테이너 모두)하면 고정 위치 툴팁 닫기
+document.addEventListener('scroll', hideTip, { capture: true, passive: true });
 
 // ---------- geometry (equirectangular projection of real coordinates) ----------
 const MAP = {
