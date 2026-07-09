@@ -121,7 +121,7 @@
   .tl-month:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tl-month[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
   .tl-month .m-name { font-size: 13px; font-weight: 750; }
-  .tl-month .m-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; background: var(--ink); color: var(--page); padding: 1px 8px; border-radius: 999px; }
+  .tl-month .m-now { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; background: var(--ink); color: var(--page); padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
   .season-band { height: 8px; border-radius: 4px; }
   .season-band.peak { background: var(--peak); }
   .season-band.shoulder { background: var(--shoulder); }
@@ -500,6 +500,11 @@ const NOW_MONTH = 7; // 2026년 7월 기준
 
 const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
 const rainPct = (rainDays, m) => Math.round(rainDays / DAYS_IN_MONTH[m-1] * 100);
+function avgRainPct(m) {
+  const cs = DATA.weather.cities;
+  const avgDays = cs.reduce((sum, c) => sum + c.rain[m-1], 0) / cs.length;
+  return rainPct(avgDays, m);
+}
 
 // Google Flights CTA helpers
 const gfUrl = (q) => 'https://www.google.com/travel/flights?q=' + encodeURIComponent(q);
@@ -598,7 +603,8 @@ function renderTimeline() {
         `<span class="wk">${evts.filter(e => e.weekOfMonth === w).map(e =>
           `<i class="evt-dot ${e.impact}"></i>`).join('')}</span>`).join('')}
       </span>
-      <span class="crowd-row">혼잡 ${'●'.repeat(s.crowd)}${'○'.repeat(5 - s.crowd)}</span>`;
+      <span class="crowd-row">혼잡 ${'●'.repeat(s.crowd)}${'○'.repeat(5 - s.crowd)}</span>
+      <span class="crowd-row" title="9개 도시 평균 비 올 확률">☂ ${avgRainPct(m)}%</span>`;
     btn.addEventListener('click', () => { selMonth = m; renderAll(); });
     bindTip(btn, () => {
       const f = flightOf(m);
@@ -607,6 +613,7 @@ function renderTimeline() {
       return `<b>${MONTH_KO[m-1]} — ${SEASON_KO[s.season]}</b><br>
         <span class="tmuted">${s.summaryKo}</span>
         <div class="trow" style="margin-top:6px"><span>직항 왕복 보통</span><b>${fmt$(f.typicalUSD)}</b></div>
+        <div class="trow"><span>비 올 확률 (전국 평균)</span><span>${avgRainPct(m)}%</span></div>
         ${rows ? '<div style="margin-top:6px">' + rows + '</div>' : ''}`;
     });
     el.appendChild(btn);
